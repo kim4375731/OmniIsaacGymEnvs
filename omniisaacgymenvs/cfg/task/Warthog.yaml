@@ -27,13 +27,13 @@ env:
     # PD Drive parameters:
     stiffness: 85.0  # [N*m/rad]
     damping: 2.0     # [N*m*s/rad]
-    actionScale: 13.5
+    actionScale: 1.0 # 13.5
 
-  defaultJointAngles:  # = target angles when action = 0.0
-    # left: 0.0     # [rad]
-    # right: 0.0    # [rad]
-    forward_velocity: 0.0  # m/s
-    yaw_rate: 0.0  # rad/s
+  # defaultJointAngles:  # = target angles when action = 0.0
+  #   # left: 0.0     # [rad]
+  #   # right: 0.0    # [rad]
+  #   forward_velocity: 0.0  # m/s
+  #   yaw_rate: 0.0  # rad/s
 
   learn:
     # rewards
@@ -42,7 +42,7 @@ env:
     linearVelocityZRewardScale: -0.03
     jointAccRewardScale: -0.0003
     actionRateRewardScale: -0.006
-    cosmeticRewardScale: -0.06
+    # cosmeticRewardScale: -0.06
 
     # normalization
     linearVelocityScale: 2.0

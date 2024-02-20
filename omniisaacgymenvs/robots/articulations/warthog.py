@@ -54,10 +54,9 @@ class Warthog(Robot):
         if self._usd_path is None:
             # assets_root_path = get_assets_root_path()
             assets_root_path = get_present_abspath()
-            print(f'rootpath : {assets_root_path}')
             if assets_root_path is None:
                 carb.log_error("Could not find nucleus server with /Isaac folder")
-            self._usd_path = assets_root_path + "/Isaac/Robots/ANYbotics/anymal_instanceable.usd"
+            self._usd_path = assets_root_path + "/../../urdfs/warthog.usd"
         add_reference_to_stage(self._usd_path, prim_path)
 
         super().__init__(
@@ -68,16 +67,16 @@ class Warthog(Robot):
             articulation_controller=None,
         )
 
-        self._dof_names = [
-            "forward_velocity",
-            "yaw_rate",
-        ]
+        self._dof_names = ["FL",
+                           "FR",
+                           "RL",
+                           "RR"]
 
     @property
     def dof_names(self):
         return self._dof_names
 
-    def set_anymal_properties(self, stage, prim):
+    def set_warthog_properties(self, stage, prim):
         for link_prim in prim.GetChildren():
             if link_prim.HasAPI(PhysxSchema.PhysxRigidBodyAPI):
                 rb = PhysxSchema.PhysxRigidBodyAPI.Get(stage, link_prim.GetPrimPath())
@@ -86,16 +85,16 @@ class Warthog(Robot):
                 rb.GetLinearDampingAttr().Set(0.0)
                 rb.GetMaxLinearVelocityAttr().Set(1000.0)
                 rb.GetAngularDampingAttr().Set(0.0)
-                rb.GetMaxAngularVelocityAttr().Set(64 / np.pi * 180)
+                rb.GetMaxAngularVelocityAttr().Set(64 / np.pi * 180)  # [deg/s] anymal: 64/np.pi*180
 
     def prepare_contacts(self, stage, prim):
         for link_prim in prim.GetChildren():
             if link_prim.HasAPI(PhysxSchema.PhysxRigidBodyAPI):
-                if "_HIP" not in str(link_prim.GetPrimPath()):
-                    rb = PhysxSchema.PhysxRigidBodyAPI.Get(stage, link_prim.GetPrimPath())
-                    rb.CreateSleepThresholdAttr().Set(0)
-                    cr_api = PhysxSchema.PhysxContactReportAPI.Apply(link_prim)
-                    cr_api.CreateThresholdAttr().Set(0)
+                # if "_HIP" not in str(link_prim.GetPrimPath()):
+                rb = PhysxSchema.PhysxRigidBodyAPI.Get(stage, link_prim.GetPrimPath())
+                rb.CreateSleepThresholdAttr().Set(0)
+                cr_api = PhysxSchema.PhysxContactReportAPI.Apply(link_prim)
+                cr_api.CreateThresholdAttr().Set(0)
 
 
 def get_present_abspath():

@@ -44,7 +44,7 @@ class WarthogView(ArticulationView):
 
         super().__init__(prim_paths_expr=prim_paths_expr, name=name, reset_xform_properties=False)
         self._base = RigidPrimView(
-            prim_paths_expr="/World/envs/.*/warthog/base",
+            prim_paths_expr="/World/envs/.*/warthog/base_link",
             name="base_view",
             reset_xform_properties=False,
             track_contact_forces=track_contact_forces,

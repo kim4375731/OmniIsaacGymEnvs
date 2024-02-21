@@ -132,7 +132,8 @@ class WarthogTask(RLTask):
                        "front_right_wheel_joint",
                        "rear_right_wheel_joint",]
         for joint_path in joint_paths:
-            set_drive(f"{warthog.prim_path}/{joint_path}", "angular", "velocity", 0, 400, 40, 1000)  # tar_val, stiff, damping, max_force
+            diff_path = "left_diff_unit_link" if joint_path.endswith("left_wheel_joint") else "right_diff_unit_link"
+            set_drive(f"{warthog.prim_path}/{diff_path}/{joint_path}", "angular", "velocity", 0, 400, 40, 1000)  # tar_val, stiff, damping, max_force
 
     def get_observations(self) -> dict:
         torso_position, torso_rotation = self._warthogs.get_world_poses(clone=False)
@@ -223,11 +224,12 @@ class WarthogTask(RLTask):
         self.default_dof_pos = torch.zeros(
             (self.num_envs, 4), dtype=torch.float, device=self.device, requires_grad=False
         )
-        dof_names = self._warthogs.dof_names
-        for i in range(self.num_actions):
-            name = dof_names[i]
-            angle = self.named_default_joint_angles[name]
-            self.default_dof_pos[:, i] = angle
+        # dof_names = self._warthogs.dof_names
+        # for i in range(self.num_actions):
+        #     name = dof_names[i]
+        #     angle = self.named_default_joint_angles[name]
+        #     self.default_dof_pos[:, i] = angle
+        self.default_dof_pos.fill_(0.0)
 
         self.initial_root_pos, self.initial_root_rot = self._warthogs.get_world_poses()
 

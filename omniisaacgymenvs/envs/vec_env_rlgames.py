@@ -36,6 +36,13 @@ from omni.isaac.gym.vec_env import VecEnvBase
 
 # VecEnv Wrapper for RL training
 class VecEnvRLGames(VecEnvBase):
+    def __init__(self, *args, **kwargs):
+        asset_root = kwargs.pop("asset_root")
+        super().__init__(*args, **kwargs)
+        assert self._simulation_app is not None, "Simulation App should be instantiated first!"
+        if asset_root is not None:
+            self._simulation_app.set_setting("/persistent/isaac/asset_root/default", asset_root)
+    
     def _process_data(self):
         self._obs = torch.clamp(self._obs, -self._task.clip_obs, self._task.clip_obs).to(self._task.rl_device)
         self._rew = self._rew.to(self._task.rl_device)

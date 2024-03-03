@@ -102,7 +102,8 @@ def parse_hydra_configs(cfg: DictConfig):
         sim_device=cfg.device_id,
         enable_livestream=cfg.enable_livestream,
         enable_viewport=enable_viewport or cfg.enable_recording,
-        experience=experience
+        experience=experience,
+        asset_root=cfg.asset_root
     )
 
     # parse experiment directory

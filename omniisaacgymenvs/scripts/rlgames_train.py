@@ -159,6 +159,7 @@ def parse_hydra_configs(cfg: DictConfig):
             sync_tensorboard=True,
             name=run_name,
             resume="allow",
+            mode="offline",  # running with no internet
         )
 
     torch.cuda.set_device(local_rank)

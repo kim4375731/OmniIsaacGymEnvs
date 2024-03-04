@@ -112,6 +112,7 @@ class RLGTrainer:
                 sync_tensorboard=True,
                 id=run_name,
                 resume="allow",
+                mode="offline",  # running with no internet                  
                 monitor_gym=True,
             )
 

@@ -109,6 +109,7 @@ def parse_hydra_configs(cfg: DictConfig):
             id=run_name,
             resume="allow",
             monitor_gym=True,
+            mode="offline",  # running with no internet            
         )
 
     rlg_trainer = RLGDemo(cfg, cfg_dict)

@@ -1,39 +1,30 @@
-import omni
-from omni.isaac.kit import SimulationApp
+from skrl.envs.torch import wrap_env
+from skrl.utils.omniverse_isaacgym_utils import get_env_instance
 
-SimulationApp({"renderer": "RayTracedLighting", "headless": False})
-simulation_app = SimulationApp({"renderer": "RayTracedLighting", "headless": False})
-# simulation_app.update()
+import hydra
+from omniisaacgymenvs.utils.hydra_cfg.hydra_utils import *
+from omniisaacgymenvs.utils.hydra_cfg.reformat import omegaconf_to_dict, print_dict
 
-# from omni.isaac.core.utils.extensions import enable_extension
-# from omni.isaac.core.utils.nucleus import get_assets_root_path
-from omni.isaac.core import World
-# from omni.isaac.core.objects import DynamicCuboid
-# from omni.isaac.wheeled_robots.robots import WheeledRobot
-# from omni.isaac.occupancy_map import _occupancy_map
-# from omni.isaac.occupancy_map.scripts.utils import update_location, compute_coordinates, generate_image
-# import numpy as np
 
-# from omniisaacgymenvs.robots.articulations.warthog import Warthog
-
-def main():     
-    # timeline = omni.timeline.get_timeline_interface()
-    world = World(stage_units_in_meters=1.0)
-    world.scene.add_default_ground_plane()    
-    # primpath = "/World/Warthog"
-    # warthog = world.scene.add(Warthog(primpath))
-    world.reset()
+@hydra.main(version_base=None, config_name="config", config_path="../cfg")
+def parse_hydra_configs(cfg: DictConfig):
+    # get environment instance
+    env = get_env_instance(headless=True)
     
-    # timeline.play()
-    # while simulation_app.is_running():
-    world.step(render=True)
-    if world.is_playing():
-        if world.current_time_step_index == 0:
-            world.reset()
-
-    # timeline.stop()
-    # simulation_app.close()
+    from omniisaacgymenvs.utils.config_utils.sim_config import SimConfig    
     
+    sim_config = SimConfig(cfg)
+    
+    # import and setup custom task
+    from omniisaacgymenvs.tasks.anymal import AnymalTask
+    cfg._task_cfg.get("renderingInterval", 1)    
+    task = AnymalTask(name="Anymal", sim_config=cfg._task_cfg, env=env)
+
+    env.set_task(task=task, sim_params=sim_config.get_physics_params(), backend="torch", init_sim=True)
+
+    # wrap the environment
+    env = wrap_env(env, "omniverse-isaacgym")        
+
 
 if __name__ == "__main__":
-    main()
+    parse_hydra_configs()

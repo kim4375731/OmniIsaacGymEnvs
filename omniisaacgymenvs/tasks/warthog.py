@@ -42,7 +42,7 @@ class WarthogTask(RLTask):
     def __init__(self, name, sim_config, env, offset=None) -> None:
 
         self.update_config(sim_config)
-        self._num_observations = 3+3+3+3+4+2
+        self._num_observations = 3+3+3+3+6+2
         self._num_actions = 2
 
         RLTask.__init__(self, name, env)
@@ -159,7 +159,7 @@ class WarthogTask(RLTask):
                 base_ang_vel,  # 3
                 projected_gravity,  # 3
                 commands_scaled,  # 3
-                dof_vel * self.dof_vel_scale,  # 4
+                dof_vel * self.dof_vel_scale,  # 6
                 self.actions,  # 2
             ),
             dim=-1,
@@ -178,12 +178,14 @@ class WarthogTask(RLTask):
             self.reset_idx(reset_env_ids)
 
         indices = torch.arange(self._warthogs.count, dtype=torch.int32, device=self._device)
+        joint_indicies = 
         self.actions[:] = actions.clone().to(self._device)  # left, right      
         current_targets = self.action_scale * self.actions.tile([2]) * self.dt  # FL, FR, RL, RR 
+        target_size = current_targets.size(-1)
         current_targets = tensor_clamp(
-            current_targets, self.warthog_dof_lower_limits, self.warthog_dof_upper_limits
+            current_targets, self.warthog_dof_lower_limits[..., :target_size-1], self.warthog_dof_upper_limits[..., :target_size-1]
         )
-        self._warthogs.set_joint_velocity_targets(current_targets, indices)
+        self._warthogs.set_joint_velocity_targets(current_targets, indices, joint_indicies)
 
     def reset_idx(self, env_ids):
         num_resets = len(env_ids)
@@ -222,7 +224,7 @@ class WarthogTask(RLTask):
 
     def post_reset(self):
         self.default_dof_pos = torch.zeros(
-            (self.num_envs, 4), dtype=torch.float, device=self.device, requires_grad=False
+            (self.num_envs, self._warthogs.num_dof), dtype=torch.float, device=self.device, requires_grad=False
         )
         # dof_names = self._warthogs.dof_names
         # for i in range(self.num_actions):

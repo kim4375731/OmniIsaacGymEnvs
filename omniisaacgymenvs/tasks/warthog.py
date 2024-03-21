@@ -83,6 +83,11 @@ class WarthogTask(RLTask):
 
         # default joint positions
         # self.named_default_joint_angles = self._task_cfg["env"]["defaultJointAngles"]
+        
+        # joint index of RL, FL, RR, RL
+        self.eff_dof_indices = torch.as_tensor([2, 4, 3, 5], dtype=torch.int32)   # FL, FR, RL, RR         
+        self.num_eff_dof = len(self.eff_dof_indices)
+        self.num_dof = 6
 
         # other
         self.dt = 1 / 60
@@ -98,8 +103,9 @@ class WarthogTask(RLTask):
         self._warthog_translation = torch.tensor([0.0, 0.0, 0.62])
         self._env_spacing = self._task_cfg["env"]["envSpacing"]
 
+
     def set_up_scene(self, scene) -> None:
-        self.get_warthog()
+        self.warthog_art = self.get_warthog()
         super().set_up_scene(scene)
         self._warthogs = WarthogView(prim_paths_expr="/World/envs/.*/warthog", name="warthogview")
         scene.add(self._warthogs)
@@ -134,6 +140,8 @@ class WarthogTask(RLTask):
         for joint_path in joint_paths:
             diff_path = "left_diff_unit_link" if joint_path.endswith("left_wheel_joint") else "right_diff_unit_link"
             set_drive(f"{warthog.prim_path}/{diff_path}/{joint_path}", "angular", "velocity", 0, 400, 40, 1000)  # tar_val, stiff, damping, max_force
+            
+        return warthog
 
     def get_observations(self) -> dict:
         torso_position, torso_rotation = self._warthogs.get_world_poses(clone=False)
@@ -176,16 +184,16 @@ class WarthogTask(RLTask):
         reset_env_ids = self.reset_buf.nonzero(as_tuple=False).squeeze(-1)
         if len(reset_env_ids) > 0:
             self.reset_idx(reset_env_ids)
-
         indices = torch.arange(self._warthogs.count, dtype=torch.int32, device=self._device)
-        joint_indicies = 
+        # for k in self._warthogs.dof_names:
+        #     print(f'warthog joint names, index : {k}, {self._warthogs.get_dof_index(k)}')
+        eff_dof_indices = self.eff_dof_indices.to(device=self._device)   # FL, FR, RL, RR 
         self.actions[:] = actions.clone().to(self._device)  # left, right      
         current_targets = self.action_scale * self.actions.tile([2]) * self.dt  # FL, FR, RL, RR 
-        target_size = current_targets.size(-1)
         current_targets = tensor_clamp(
-            current_targets, self.warthog_dof_lower_limits[..., :target_size-1], self.warthog_dof_upper_limits[..., :target_size-1]
+            current_targets, self.warthog_dof_lower_limits[..., eff_dof_indices], self.warthog_dof_upper_limits[..., eff_dof_indices]
         )
-        self._warthogs.set_joint_velocity_targets(current_targets, indices, joint_indicies)
+        self._warthogs.set_joint_velocity_targets(current_targets, indices, eff_dof_indices)
 
     def reset_idx(self, env_ids):
         num_resets = len(env_ids)
@@ -251,7 +259,7 @@ class WarthogTask(RLTask):
             self._num_envs, self.num_actions, dtype=torch.float, device=self._device, requires_grad=False
         )
         self.last_dof_vel = torch.zeros(
-            (self._num_envs, 4), dtype=torch.float, device=self._device, requires_grad=False
+            (self._num_envs, self.num_dof), dtype=torch.float, device=self._device, requires_grad=False
         )
         self.last_actions = torch.zeros(
             self._num_envs, self.num_actions, dtype=torch.float, device=self._device, requires_grad=False
